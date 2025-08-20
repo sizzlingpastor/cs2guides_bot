@@ -1,8 +1,7 @@
 import telebot
 import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask
-import threading
+from flask import Flask, request
 
 # ===== Настройки бота =====
 TOKEN = os.getenv("BOT_TOKEN")
@@ -10,6 +9,7 @@ if not TOKEN:
     raise ValueError("Не найден BOT_TOKEN в переменных окружения!")
 
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 # Текст приветствия с жирным заголовком
 welcome_text = (
@@ -52,14 +52,13 @@ def handle_ready(call):
         reply_markup=get_guide_keyboard()
     )
 
-# ===== Запуск бота в отдельном потоке =====
-def run_bot():
-    bot.polling(none_stop=True)
-
-threading.Thread(target=run_bot).start()
-
-# ===== HTTP-сервер для Render =====
-app = Flask(__name__)
+# ===== Flask webhook =====
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "!", 200
 
 @app.route("/")
 def home():
@@ -67,6 +66,13 @@ def home():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"HTTP-сервер запущен на порту {port}")
+    # Устанавливаем webhook при запуске
+    APP_URL = os.getenv("RENDER_EXTERNAL_URL")
+    if not APP_URL:
+        raise ValueError("Не найден RENDER_EXTERNAL_URL! Render сам его подставляет.")
+    webhook_url = f"{APP_URL}/{TOKEN}"
+    bot.remove_webhook()
+    bot.set_webhook(url=webhook_url)
+    print(f"Webhook установлен: {webhook_url}")
     app.run(host="0.0.0.0", port=port)
 
