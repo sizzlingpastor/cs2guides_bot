@@ -1,9 +1,14 @@
 import telebot
 import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask
+import threading
 
-# Вставь сюда токен от BotFather
+# ===== Настройки бота =====
 TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("Не найден BOT_TOKEN в переменных окружения!")
+
 bot = telebot.TeleBot(TOKEN)
 
 # Текст приветствия с жирным заголовком
@@ -13,7 +18,7 @@ welcome_text = (
     "🔽 Подпишись на [Контрач](https://t.me/+nlO1yhckyvg1NWVi), чтобы забрать гайд"
 )
 
-# Кнопка "Готово" для проверки подписки
+# Кнопка "Готово" для проверки подписки (пока что не проверяет реально подписан ли юзер)
 def get_ready_keyboard():
     keyboard = InlineKeyboardMarkup()
     button = InlineKeyboardButton("Готово ✅", callback_data="ready")
@@ -27,7 +32,7 @@ def get_guide_keyboard():
     keyboard.add(button)
     return keyboard
 
-# Команда /start
+# ===== Хэндлеры =====
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_message(
@@ -47,5 +52,21 @@ def handle_ready(call):
         reply_markup=get_guide_keyboard()
     )
 
-bot.polling()
+# ===== Запуск бота в отдельном потоке =====
+def run_bot():
+    bot.polling()
+
+threading.Thread(target=run_bot).start()
+
+# ===== HTTP-сервер для Render =====
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Бот cs2guides живой!"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    print(f"HTTP-сервер запущен на порту {port}")
+    app.run(host="0.0.0.0", port=port)
 
