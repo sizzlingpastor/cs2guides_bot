@@ -54,7 +54,7 @@ def handle_ready(call):
 
 # ===== Запуск бота в отдельном потоке =====
 def run_bot():
-    bot.polling()
+    bot.polling(none_stop=True)
 
 threading.Thread(target=run_bot).start()
 
@@ -63,7 +63,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Бот cs2guides живой!"
+    return "Бот cs2guides_bot живой!"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
