@@ -3,7 +3,7 @@ import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Вставь сюда токен от BotFather
-TOKEN = os.getenv("8470820360:AAGcVFqMyqinb0SsXk0jDtgBkalQLUHPgMc")
+TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 # Текст приветствия с жирным заголовком
